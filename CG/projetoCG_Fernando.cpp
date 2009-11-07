@@ -9,6 +9,7 @@
 #include <GL/glu.h>
 #include <GL/glut.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 #include <math.h>
 
