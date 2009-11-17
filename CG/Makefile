@@ -1,4 +1,4 @@
-all: clean barco triangulo novo
+all: barco triangulo novo
 
 barco:
 	gcc -o barco.o -lglut barco.c
