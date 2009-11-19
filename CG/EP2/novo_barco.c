@@ -165,7 +165,7 @@ void display(void) {
     glPopMatrix();
     
     glPushMatrix();
-         GLfloat solColor[] = {AMARELO, 0.5};
+         GLfloat solColor[] = {AMARELO, 1.0};
          GLfloat solSpecular[] = {AMARELO, 1.0};
      
          glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, solColor);
