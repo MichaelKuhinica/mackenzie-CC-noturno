@@ -14,25 +14,10 @@ Projeto 1 - Computação Gráfica.
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
-
-#define BRANCO   1.0, 1.0, 1.0
-#define PRETO    0.0, 0.0, 0.0
-#define AZUL     0.0, 0.0, 1.0
-#define VERMELHO 1.0, 0.0, 0.0
-#define AMARELO  1.0, 1.0, 0.0
-#define VERDE    0.0, 1.0, 0.0
-#define CYAN     1.0, 0.0, 1.0
-#define LARANJA  0.8, 0.6, 0.1
-#define ROSEO    0.7, 0.1, 0.6
-#define CINZA    0.6, 0.6, 0.6
-#define CINZA_A  0.95, 0.95, 0.95
-#define CINZA_B  0.85, 0.85, 0.85
-#define CINZA_C  0.7, 0.7, 0.7
-#define CINZA_D  0.5, 0.5, 0.5
-#define CINZA_E  0.2, 0.2, 0.2
-
-#define PI 3.1415
-#define STARS 1000
+#include "image.h"
+#include "image.c"
+#include "defines.h"
+#include "model.c"
 
 void init(void);
 void display(void);
@@ -43,33 +28,8 @@ void rotacaoCamX( GLfloat );
 void rotacaoCamY( GLfloat );
 void rotacaoCamZ( GLfloat );
 void printBarco(void);
-
-int eYObj = 0,
-	eXObj = 0,
-	eZObj = 0;
-
-int eYMundo = 0,
-	eXMundo = 0,
-	eZMundo = 0;
-
-GLfloat posXObj = 0.0,
-		posYObj = 0.0,
-		posZObj = 0.0;
-
-GLfloat posXCam = 1.0,
-		posYCam = 1.0,
-		posZCam = 1.0;
-
-GLfloat anguloYCam = 0.0,
-		anguloXCam = 0.0,
-		anguloZCam = 0.0;
-
-int width, height;
-
-GLfloat LightAmbient[]= { 0.5f, 0.5f, 0.5f, 1.0f };
-GLfloat LightDiffuse[]= { 1.0f, 1.0f, 1.0f, 1.0f };
-GLfloat LightPosition[]= { 0.0f, 0.0f, -7.0f, 1.0f };
-float estrelas[STARS][3];
+void printEixos(void);
+void carregar_texturas(void);
 
 int main(int argc, char** argv) {
 
@@ -82,6 +42,7 @@ int main(int argc, char** argv) {
 	init();
 
 	glutDisplayFunc(display);
+	glutIdleFunc(display);
 	glutKeyboardFunc(keyboard);
 	glutSpecialFunc(special);
 	glutReshapeFunc(reshape);
@@ -92,18 +53,34 @@ int main(int argc, char** argv) {
 
 void init(void) {
 
-    srand(time(NULL));
-
-    int i;
-    for(i=0; i<STARS; i++) {
-        estrelas[i][0] = (rand() % 5) + 1 * ( pow( -1 , rand() % 3 + 1) );
-	    estrelas[i][1] = (rand() % 5) + 1 * ( pow( -1 , rand() % 3 + 1) );
-	    estrelas[i][2] = (rand() % 5) + 1 * ( pow( -1 , rand() % 3 + 1) );
-    }
-
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearColor(1.0, 1.0, 1.0, 0.0);
 	glClearDepth(1.0f);
-	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  
+	
+    carregar_texturas();
+}
+
+void carrega_luzes() {
+    
+	GLfloat ambientLight[] = {0.6, 0.6, 0.6, 1.0};
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight);
+	
+    glLightfv(GL_LIGHT0, GL_AMBIENT, l1ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, l1diffuse);
+    glLightfv(GL_LIGHT0, GL_POSITION, l1position);
+    glLightfv(GL_LIGHT0, GL_COLOR, l1cor);
+    
+    glEnable(GL_LIGHTING);
+    
+    if(luzes)      
+        glEnable(GL_LIGHT0);
+    else
+        glDisable(GL_LIGHT0);
+        
+    glEnable(GL_COLOR_MATERIAL);
 }
 
 
@@ -124,70 +101,25 @@ void reshape(int w, int h) {
 void display(void) {
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
-
+        
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    if(texturas) {
+        glEnable(GL_TEXTURE_2D);
+        glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
+    } else
+        glDisable(GL_TEXTURE_2D);
+    
+    carrega_luzes();
+    printEixos();
 
-    glColor3f(AZUL);  // desenhando o plano Y
-	glBegin(GL_LINES);
-		glVertex3f(0.0, -30.0, 0.0);
-		glVertex3f(0.0, 30.0, 0.0);
-	glEnd();
-
-	glColor3f(VERMELHO);  // desenhando o plano X
-	glBegin(GL_LINES);
-		glVertex3f(-30.0, 0.0, 0.0);
-		glVertex3f(30.0, 0.0, 0.0);
-	glEnd();
-
-	glColor3f(AMARELO);  // desenhando o plano Z
-	glBegin(GL_LINES);
-		glVertex3f(0.0, 0.0, -30.0);
-		glVertex3f(0.0, 0.0, 30.0);
-	glEnd();
-
-    glPushMatrix();
-		glLoadIdentity();
-		glTranslatef(6.0, 5.0, -10.0);
-		glRotatef((GLfloat) eYObj, 0.0, 1.0, 0.0);
-		glRotatef((GLfloat) eXObj, 1.0, 0.0, 0.0);
-		glRotatef((GLfloat) eZObj, 0.0, 0.0, 1.0);
-
-		glColor3f(AZUL);  // desenhando o plano Y
-		glBegin(GL_LINES);
-			glVertex3f(0.0, -1.0, 0.0);
-			glVertex3f(0.0, 1.0, 0.0);
-		glEnd();
-
-		glPushMatrix();  // quadradinho do positivo
-			glTranslatef(0.0, 1.0, 0.0);
-			glutSolidCube(0.09);
-		glPopMatrix();
-
-		glColor3f(VERMELHO);  // desenhando o plano X
-		glBegin(GL_LINES);
-			glVertex3f(-1.0, 0.0, 0.0);
-			glVertex3f(1.0, 0.0, 0.0);
-		glEnd();
-
-		glPushMatrix();  // quadradinho do positivo
-			glTranslatef(1.0, 0.0, 0.0);
-			glutSolidCube(0.09);
-		glPopMatrix();
-
-		glColor3f(AMARELO);  // desenhando o plano Z
-		glBegin(GL_LINES);
-			glVertex3f(0.0, 0.0, -1.0);
-			glVertex3f(0.0, 0.0, 1.0);
-		glEnd();
-
-		glPushMatrix();   // quadradinho do positivo
-			glTranslatef(0.0, 0.0, -1.0);
-			glutSolidCube(0.09);
-		glPopMatrix();
-
-	glPopMatrix();  // 	fim - desenhando o plano auxiliar no canto da tela
-
-
+    if(anima) {
+        contador += ammount;
+        if((contador %  10) == 0) {
+            z_amm *= -1;
+        }
+        eZObj += z_amm;
+    }
     glPushMatrix();
 	
 	    glRotatef((GLfloat) eXObj, 1.0, 0.0, 0.0);
@@ -195,11 +127,34 @@ void display(void) {
 	    glRotatef((GLfloat) eZObj, 0.0, 0.0, 1.0); 
 
         glColor3f(BRANCO);
-            
+        glTranslatef(posXObj, posYObj + 0.2, posZObj);
         printBarco();
         
     glPopMatrix();
     
+    glPushMatrix();
+         glColor3f(CEU);
+         gluSphere(gluNewQuadric(), 25, 10, 15);
+    glPopMatrix();
+    
+    glPushMatrix();
+         glColor4f(AMARELO, 0.4);
+         glTranslatef(-5.0, 5.0, 0.0);
+         gluSphere(gluNewQuadric(), 0.7, 10, 15);
+    glPopMatrix();
+    
+    glBegin(GL_QUADS);
+        glColor3f(AZUL);
+        glTexCoord2fv(ctp[0]);  
+        glVertex3f(-30,-0.2,60);
+        glTexCoord2fv(ctp[1]);  
+        glVertex3f(30,-0.2,60);
+        glTexCoord2fv(ctp[2]);  
+        glVertex3f(30,-0.2,-60);
+        glTexCoord2fv(ctp[3]);  
+        glVertex3f(-30,-0.2,-60);
+    glEnd();
+        
 	glutSwapBuffers();
 
 }
@@ -209,6 +164,36 @@ void atualizaCam()
     glLoadIdentity();
     gluLookAt(posXCam, posYCam, posZCam, posXObj, posYObj, posZObj, 0, 1, 0);
 }
+
+void carregar_texturas(){
+    IMAGE *img;
+    GLenum gluerr;
+
+    /* textura do plano */
+    glGenTextures(1, &textura_plano);
+    glBindTexture(GL_TEXTURE_2D, textura_plano);
+
+    if(!(img=ImageLoad(TEXTURA_MAR))) {
+    fprintf(stderr,"Error reading a texture.\n");
+    exit(-1);
+    }
+
+    gluerr=gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 
+		       img->sizeX, img->sizeY, 
+		       GL_RGB, GL_UNSIGNED_BYTE, 
+		       (GLvoid *)(img->data));
+    if(gluerr){
+    fprintf(stderr,"GLULib%s\n",gluErrorString(gluerr));
+    exit(-1);
+    }
+
+    glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_DECAL);
+}
+
 
 
 void special(int key, int x, int y) {
@@ -343,284 +328,26 @@ void keyboard(unsigned char key, int x, int y) {
 		rotacaoCamZ(0.01);
 		break;
 
-
+    case 'q':
+        if(!luzes)
+            luzes = 1;
+        else
+            luzes = 0;
+        break;
+    case 'a':
+        if(!anima)
+            anima = 1;
+        else
+            anima = 0;
+        break;
+    case 't':
+        if(!texturas)
+            texturas = 1;
+        else
+            texturas = 0;
+        break;
 	}
 
 	glutPostRedisplay();
     atualizaCam();
 }
-
-void printBarco(void) {
-    glPushMatrix();
-    
-        //Melhorando tamanho do barco
-        glScalef(2.0, 2.0, 2.0);
-        /* CASCO */
-        glColor3f(AZUL);
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.22, -0.16, 0.00);
-	        glVertex3f(-0.53, -0.02, 0.12);
-	        glVertex3f(-0.53, -0.02, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, 0.12);
-	        glVertex3f(0.04, -0.16, 0.00);
-	        glVertex3f(0.35, -0.02, 0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.04, -0.16, 0.00);
-	        glVertex3f(0.35, -0.02, -0.12);
-	        glVertex3f(0.35, -0.02, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.04, -0.16, 0.00);
-	        glVertex3f(0.35, -0.02, -0.12);
-	        glVertex3f(0.46, -0.00, 0.00);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, 0.12);
-	        glVertex3f(0.04, -0.16, 0.00);
-	        glVertex3f(0.46, -0.00, 0.00);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.35, -0.02, 0.12);
-	        glVertex3f(0.46, -0.00, 0.00);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, -0.12);
-	        glVertex3f(0.35, 0.00, -0.12);
-	        glVertex3f(0.46, -0.00, 0.00);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, -0.12);
-	        glVertex3f(-0.53, -0.02, -0.12);
-	        glVertex3f(-0.53, 0.00, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, -0.12);
-	        glVertex3f(-0.53, 0.00, -0.12);
-	        glVertex3f(0.35, 0.00, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.53, -0.02, 0.12);
-	        glVertex3f(0.35, -0.02, 0.12);
-	        glVertex3f(0.35, 0.00, 0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.53, -0.02, 0.12);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(-0.53, 0.00, 0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.53, -0.02, -0.12);
-	        glVertex3f(-0.53, -0.02, 0.12);
-	        glVertex3f(-0.53, 0.00, 0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.53, -0.02, -0.12);
-	        glVertex3f(-0.53, 0.00, 0.12);
-	        glVertex3f(-0.53, 0.00, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, -0.12);
-	        glVertex3f(0.04, -0.16, 0.00);
-	        glVertex3f(-0.53, -0.02, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.04, -0.16, 0.00);
-	        glVertex3f(-0.22, -0.16, 0.00);
-	        glVertex3f(-0.53, -0.02, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.04, -0.16, 0.00);
-	        glVertex3f(0.35, -0.02, 0.12);
-	        glVertex3f(-0.22, -0.16, 0.00);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, 0.12);
-	        glVertex3f(-0.53, -0.02, 0.12);
-	        glVertex3f(-0.22, -0.16, 0.00);
-        glEnd();
-        /* FIM - CASCO */
-        
-        /* CABINE */
-        
-        glColor3f(AMARELO);
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.26, 0.00, 0.06);
-	        glVertex3f(0.26, 0.00, -0.06);
-	        glVertex3f(0.14, 0.10, -0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.14, 0.10, -0.06);
-	        glVertex3f(-0.44, 0.10, -0.06);
-	        glVertex3f(0.14, 0.10, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.44, 0.10, -0.06);
-	        glVertex3f(-0.44, 0.10, 0.06);
-	        glVertex3f(0.14, 0.10, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.26, 0.00, 0.06);
-	        glVertex3f(0.14, 0.10, -0.06);
-	        glVertex3f(0.14, 0.10, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.26, 0.00, -0.06);
-	        glVertex3f(-0.44, 0.00, -0.06);
-	        glVertex3f(0.14, 0.10, -0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.44, 0.00, -0.06);
-	        glVertex3f(-0.44, 0.10, -0.06);
-	        glVertex3f(0.14, 0.10, -0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.44, 0.00, 0.06);
-	        glVertex3f(0.26, 0.00, 0.06);
-	        glVertex3f(0.14, 0.10, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.44, 0.00, 0.06);
-	        glVertex3f(0.14, 0.10, 0.06);
-	        glVertex3f(-0.44, 0.10, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.44, 0.00, -0.06);
-	        glVertex3f(-0.44, 0.00, 0.06);
-	        glVertex3f(-0.44, 0.10, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.44, 0.00, -0.06);
-	        glVertex3f(-0.44, 0.10, 0.06);
-	        glVertex3f(-0.44, 0.10, -0.06);
-        glEnd();
-        
-        /* FIM - CABINE */
-        
-        /* PROA */   
-        
-        glColor3f(VERMELHO);
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.53, 0.00, -0.12);
-	        glVertex3f(-0.53, 0.00, 0.12);
-	        glVertex3f(-0.44, 0.00, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.53, 0.00, -0.12);
-	        glVertex3f(-0.44, 0.00, 0.06);
-	        glVertex3f(-0.44, 0.00, -0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.53, 0.00, 0.12);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(-0.44, 0.00, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.26, 0.00, 0.06);
-	        glVertex3f(-0.44, 0.00, 0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, -0.12);
-	        glVertex3f(-0.53, 0.00, -0.12);
-	        glVertex3f(0.26, 0.00, -0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(-0.53, 0.00, -0.12);
-	        glVertex3f(-0.44, 0.00, -0.06);
-	        glVertex3f(0.26, 0.00, -0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.35, 0.00, -0.12);
-	        glVertex3f(0.26, 0.00, -0.06);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.26, 0.00, -0.06);
-	        glVertex3f(0.26, 0.00, 0.06);
-        glEnd();
-         glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, -0.12);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.46, -0.00, 0.00);
-        glEnd();    
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.35, -0.02, 0.12);
-	        glVertex3f(0.35, -0.02, 0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.35, -0.02, 0.12);
-	        glVertex3f(0.35, 0.00, 0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, -0.12);
-	        glVertex3f(0.35, 0.00, -0.12);
-	        glVertex3f(0.35, 0.00, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, -0.02, -0.12);
-	        glVertex3f(0.35, 0.00, -0.12);
-	        glVertex3f(0.35, -0.02, -0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, -0.12);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.35, 0.00, 0.12);
-        glEnd();
-        glBegin(GL_POLYGON);
-	        glVertex3f(0.35, 0.00, -0.12);
-	        glVertex3f(0.35, 0.00, 0.12);
-	        glVertex3f(0.35, 0.00, -0.12);
-        glEnd();
-        /* FIM - PROA */      
-    glPopMatrix();
-    
-    //Deixo as janelas separadas pois Disks são mais faceis de se trabalhar deste tamanho
-    /* JANELAS */   
-    
-    glPushMatrix();
-        glTranslatef(0.2, 0.13, -0.125);
-        glColor3f(VERDE);
-        gluDisk( gluNewQuadric() , 0 , 0.07, 18, 5);
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslatef(-0.2, 0.13, -0.125);
-        glColor3f(VERDE);
-        gluDisk( gluNewQuadric() , 0 , 0.07, 18, 5);
-    glPopMatrix();
-           
-    glPushMatrix();
-        glTranslatef(-0.6, 0.13, -0.125);
-        glColor3f(VERDE);
-        gluDisk( gluNewQuadric() , 0 , 0.07, 18, 5);
-    glPopMatrix();
-    
-    glPushMatrix();
-        glTranslatef(0.2, 0.13, 0.125);
-        glColor3f(VERDE);
-        gluDisk( gluNewQuadric() , 0 , 0.07, 18, 5);
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslatef(-0.2, 0.13, 0.125);
-        glColor3f(VERDE);
-        gluDisk( gluNewQuadric() , 0 , 0.07, 18, 5);
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslatef(-0.6, 0.13, 0.125);
-        glColor3f(VERDE);
-        gluDisk( gluNewQuadric() , 0 , 0.07, 18, 5);
-    glPopMatrix(); 
-        
-    /* FIM - JANELAS */
-    
-}
-
