@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include "vars.c"
 
+#define PASSO 0
+
 void inicia_threads(void);
 void trabalha(void*);
 void inicializa_casas(void);
@@ -17,11 +19,13 @@ void print_pedreiros(void);
 void print_estoque(void);
 void print_casas(void);
 int decide_casa(void);
+int checa_todas(void);
 void checa_casa(casa_struct*);
 
 int rodando = 1;
 
 int main(void) {
+
     printf("Numero de pedreiros: ");
     scanf("%d",&P);
     printf("Quantidade de casas a construir: ");
@@ -40,7 +44,7 @@ int main(void) {
     scanf("%d",&Ptt);
     printf("Quantos segundos ele demora para concluir o trabalho? ");
     scanf("%d",&Pts); 
-    
+   
     m_casas = (pthread_mutex_t *)malloc(C * sizeof(pthread_mutex_t));
     t_pedreiros = (pthread_t *)malloc(P * sizeof(pthread_t));
     casas = (casa_struct *)malloc(C * sizeof(casa_struct));
@@ -63,6 +67,9 @@ int main(void) {
         print_casas();
         printf("\n*************************\n");
         print_estoque();
+        
+        if(PASSO == 1)
+            getchar();
     }
     
     printf("\nCasas prontas! =D\n");
@@ -120,6 +127,13 @@ void print_casas() {
     printf("\nPronta?   \t");
     for(i=0; i < C; i++) {
         if(casas[i].pronta == 0)
+            printf("Nao\t\t");
+        else
+            printf("Sim\t\t");
+    }
+    printf("\nOcupada?   \t");
+    for(i=0; i < C; i++) {
+        if(casas[i].ocupada == 0)
             printf("Nao\t\t");
         else
             printf("Sim\t\t");
@@ -186,6 +200,7 @@ void trabalha(void *ped) {
             rodando = 0;
         else {
             pthread_mutex_lock((pthread_mutex_t*) &m_casas[casa]);
+            casas[casa].ocupada = 1;
             p->casa = casa;
             
             tijolos_precisa = Ct - casas[casa].tijolos;
@@ -204,19 +219,34 @@ void trabalha(void *ped) {
             
             sleep(Pts);
             p->casa = -1;
+            casas[casa].ocupada = 0;
             checa_casa(&casas[casa]);
+            rodando = checa_todas();
             pthread_mutex_unlock((pthread_mutex_t*) &m_casas[casa]);        
         }
+        if(PASSO == 1)
+            getchar();
     }
 }
 
 int decide_casa() {
+    int i = 0;
+    while(casas[i].pronta == 1 || casas[i].ocupada == 1) {
+        if(i == (C - 1))
+            i = 0;
+        else 
+            i++;
+    }
+    return i;
+}
+
+int checa_todas() {
     int i;
     for(i=0; i<C; i++) {
         if(casas[i].pronta == 0)
-            return i;
-    }    
-    return -1;
+            return 1;
+    }
+    return 0;
 }
 
 void checa_casa(casa_struct* c) {

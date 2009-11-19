@@ -4,6 +4,7 @@ typedef struct {
     int tijolos;
     int numero;
     int pronta;
+    int ocupada;
 } casa_struct;
 
 typedef struct {
